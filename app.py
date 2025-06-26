@@ -18,12 +18,13 @@ Veja aqui as definições dos tipos de viés analisados pela ferramenta</a>.
 </div>
 """, unsafe_allow_html=True)
 
-# Campos de entrada
+# Entrada
 termo = st.text_input("🔍 Termo de busca", value="inteligência artificial")
-qtd   = st.number_input("📄 Defina N", 1, 50, 10)
+qtd   = st.number_input("📄 Defina N", 1, 50, 3)
 executar = st.button("Analisar")
 
-if executar:
+# Rodar análise ou reutilizar cache
+if "df_final" not in st.session_state or executar:
     with st.spinner("🔎 Buscando artigos…"):
         df_raw = buscar_artigos(termo, qtd)
 
@@ -37,10 +38,18 @@ if executar:
     with st.spinner("🤖 Rodando análise de viés (OpenAI)…"):
         df_final = analisar_artigos(df_raw.head(qtd))
 
+    st.session_state.df_final = df_final
+    st.session_state.df_raw = df_raw
+
+# Exibir resultado
+if "df_final" in st.session_state:
+    df_final = st.session_state.df_final
+    df_raw = st.session_state.df_raw
+
     st.success("Análise concluída!")
 
-    artigos_unicos = df_final["Artigo"].unique()
-    escolhido = st.selectbox("🔎 Selecione um artigo para ver a análise completa:", artigos_unicos)
+    artigos = df_final["Artigo"].unique()
+    escolhido = st.selectbox("🔎 Selecione um artigo para ver a análise completa:", artigos)
 
     df_artigo = df_final[df_final["Artigo"] == escolhido]
     link = df_artigo["Link"].iloc[0]
@@ -48,29 +57,22 @@ if executar:
 
     for _, row in df_artigo.iterrows():
         st.markdown("---")
+        col1, col2 = st.columns([1, 3])
+        with col1:
+            st.markdown("**🟥 Trecho (Tendencioso)**")
+            st.markdown(row.get("Trecho (Tendencioso)", ""))
+            st.markdown("**🟧 Opinião Disfarçada**")
+            st.markdown(row.get("Trecho (Opinião disfarçada)", ""))
+            st.markdown("**🟨 Tema Ausente**")
+            st.markdown(row.get("Tema ausente", ""))
+        with col2:
+            st.markdown("**Tipo de Viés:** " + row.get("Tipo de Viés", ""))
+            st.markdown("**Explicação (Viés):** " + row.get("Explicação (Viés)", ""))
+            st.markdown("**Reescrita (Viés):** " + row.get("Reescrita (Viés)", ""))
+            st.markdown("**Motivo (Opinião):** " + row.get("Motivo (Opinião)", ""))
+            st.markdown("**Reescrita (Opinião):** " + row.get("Reescrita (Opinião)", ""))
+            st.markdown("**Importância do Contraponto:** " + row.get("Importância do Contraponto", ""))
+            st.markdown("**Sugestão de Inclusão:** " + row.get("Sugestão de Inclusão", ""))
 
-        # 🔹 1. Tendencioso
-        if row["Trecho (Tendencioso)"]:
-            st.markdown("#### 🎯 Viés tendencioso")
-            st.markdown(f"- **Trecho:** {row['Trecho (Tendencioso)']}")
-            st.markdown(f"- **Tipo:** {row['Tipo de Viés']}")
-            st.markdown(f"- **Explicação:** {row['Explicação (Viés)']}")
-            st.markdown(f"- **Reescrita sugerida:** {row['Reescrita (Viés)']}")
-
-        # 🔹 2. Opinião disfarçada
-        if row["Trecho (Opinião disfarçada)"]:
-            st.markdown("#### 💬 Opinião disfarçada")
-            st.markdown(f"- **Trecho:** {row['Trecho (Opinião disfarçada)']}")
-            st.markdown(f"- **Motivo:** {row['Motivo (Opinião)']}")
-            st.markdown(f"- **Reescrita sugerida:** {row['Reescrita (Opinião)']}")
-
-        # 🔹 3. Contraponto ausente
-        if row["Tema ausente"]:
-            st.markdown("#### ⚖️ Contraponto ausente")
-            st.markdown(f"- **Tema ausente:** {row['Tema ausente']}")
-            st.markdown(f"- **Importância:** {row['Importância do Contraponto']}")
-            st.markdown(f"- **Como incluir:** {row['Sugestão de Inclusão']}")
-
-    # Botão de download
     csv = df_final.to_csv(index=False).encode("utf-8")
     st.download_button("⬇️ Baixar CSV", csv, "bias_report.csv", mime="text/csv")
