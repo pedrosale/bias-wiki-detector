@@ -1,6 +1,3 @@
-from pathlib import Path
-
-main_py_code = """
 import streamlit as st
 import pandas as pd
 from src.wiki_fetch import buscar_artigos
@@ -47,8 +44,3 @@ if st.button("Analisar"):
                     st.markdown(f"**Trecho tendencioso:** {row['Trecho (Tendencioso)']}")
                     st.markdown(f"**Tipo de viés:** {row['Tipo de Viés']}")
                     st.markdown(f"**Explicação:** {row['Explicação (Viés)']}")
-"""
-
-path = "/mnt/data/main_interativo.py"
-Path(path).write_text(main_py_code)
-path
