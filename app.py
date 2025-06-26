@@ -2,6 +2,7 @@ import streamlit as st, pandas as pd
 from src.wiki_fetch import buscar_artigos
 from src.detector import analisar_artigos
 
+
 st.set_page_config(page_title="Bias Wiki Detector", layout="wide")
 st.title("🧠 Bias Wiki Detector")
 
