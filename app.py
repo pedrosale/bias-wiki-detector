@@ -18,14 +18,14 @@ Veja aqui as definições dos tipos de viés analisados pela ferramenta</a>.
 </div>
 """, unsafe_allow_html=True)
 
-# Entradas do usuário
+# Campos de entrada
 termo = st.text_input("🔍 Termo de busca", value="inteligência artificial")
 qtd   = st.number_input("📄 Defina N", 1, 50, 10)
 executar = st.button("Analisar")
 
 if executar:
     with st.spinner("🔎 Buscando artigos…"):
-        df_raw = buscar_artigos(termo, qtd)  # <- agora respeita N corretamente
+        df_raw = buscar_artigos(termo, qtd)
 
     if df_raw.empty:
         st.warning("Nenhum artigo encontrado com esse termo no título.")
@@ -35,11 +35,10 @@ if executar:
     st.dataframe(df_raw[["Artigo", "Link", "data_ultima_edicao"]], use_container_width=True)
 
     with st.spinner("🤖 Rodando análise de viés (OpenAI)…"):
-        df_final = analisar_artigos(df_raw)  # <- já está limitado aos N mais recentes
+        df_final = analisar_artigos(df_raw.head(qtd))
 
     st.success("Análise concluída!")
 
-    # Interface interativa por artigo
     artigos_unicos = df_final["Artigo"].unique()
     escolhido = st.selectbox("🔎 Selecione um artigo para ver a análise completa:", artigos_unicos)
 
@@ -49,10 +48,29 @@ if executar:
 
     for _, row in df_artigo.iterrows():
         st.markdown("---")
-        st.markdown(f"**Trecho tendencioso:** {row['Trecho (Tendencioso)']}")
-        st.markdown(f"**Tipo de viés:** {row['Tipo de Viés']}")
-        st.markdown(f"**Explicação:** {row['Explicação (Viés)']}")
 
-    # Botão para baixar CSV completo
+        # 🔹 1. Tendencioso
+        if row["Trecho (Tendencioso)"]:
+            st.markdown("#### 🎯 Viés tendencioso")
+            st.markdown(f"- **Trecho:** {row['Trecho (Tendencioso)']}")
+            st.markdown(f"- **Tipo:** {row['Tipo de Viés']}")
+            st.markdown(f"- **Explicação:** {row['Explicação (Viés)']}")
+            st.markdown(f"- **Reescrita sugerida:** {row['Reescrita (Viés)']}")
+
+        # 🔹 2. Opinião disfarçada
+        if row["Trecho (Opinião disfarçada)"]:
+            st.markdown("#### 💬 Opinião disfarçada")
+            st.markdown(f"- **Trecho:** {row['Trecho (Opinião disfarçada)']}")
+            st.markdown(f"- **Motivo:** {row['Motivo (Opinião)']}")
+            st.markdown(f"- **Reescrita sugerida:** {row['Reescrita (Opinião)']}")
+
+        # 🔹 3. Contraponto ausente
+        if row["Tema ausente"]:
+            st.markdown("#### ⚖️ Contraponto ausente")
+            st.markdown(f"- **Tema ausente:** {row['Tema ausente']}")
+            st.markdown(f"- **Importância:** {row['Importância do Contraponto']}")
+            st.markdown(f"- **Como incluir:** {row['Sugestão de Inclusão']}")
+
+    # Botão de download
     csv = df_final.to_csv(index=False).encode("utf-8")
     st.download_button("⬇️ Baixar CSV", csv, "bias_report.csv", mime="text/csv")
