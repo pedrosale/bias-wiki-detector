@@ -1,7 +1,7 @@
 streamlit
 wikipedia
-pandas
-requests
-openai
-python-dotenv         # para ler a chave da OpenAI
 wikipedia-api
+pandas
+openai
+python-dotenv
+requests
