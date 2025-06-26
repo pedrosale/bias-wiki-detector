@@ -6,7 +6,7 @@ st.set_page_config(page_title="Bias Wiki Detector", layout="wide")
 st.title("🧠 Bias Wiki Detector")
 st.markdown("""
 <div style="background-color:#f0f2f6;padding:10px;border-left:5px solid #999;">
-🔍 O detector pesquisa até <b>50 artigos da Wikipédia</b> cujo título contém o termo informado, 
+O detector pesquisa até <b>50 artigos da Wikipédia</b> cujo título contém o termo informado, 
 consulta a <i>MediaWiki&nbsp;API</i> para obter a <b>data da última edição</b> e analisa os <b>N artigos mais recentes</b>.<br>
 ⚠️ Se a data estiver indisponível para algum artigo, ele é listado após os que possuem data válida.
 </div>
