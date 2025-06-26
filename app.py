@@ -4,6 +4,13 @@ from src.detector import analisar_artigos
 
 st.set_page_config(page_title="Bias Wiki Detector", layout="wide")
 st.title("🧠 Bias Wiki Detector")
+st.markdown("""
+<div style="background-color: #f0f2f6; padding: 10px; border-left: 5px solid #999;">
+🔍 Este detector busca até <b>50 artigos da Wikipedia</b> relacionados ao termo informado e analisa os <b>N primeiros da lista</b> retornada.  
+⚠️ A ordem dos artigos pode não refletir os mais recentes, pois a Wikipedia API pública não fornece a data de edição diretamente.
+</div>
+""", unsafe_allow_html=True)
+
 
 termo = st.text_input("🔍 Termo de busca", value="inteligência artificial")
 qtd   = st.number_input("📄 Artigos mais recentes", 1, 50, 10)
