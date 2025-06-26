@@ -2,7 +2,11 @@ import wikipediaapi
 import pandas as pd
 from datetime import datetime
 
-wiki = wikipediaapi.Wikipedia('pt')
+wiki = wikipediaapi.Wikipedia(
+    language='pt',
+    user_agent='bias-wiki-detector/1.0 (Pedro Amorim)'
+)
+
 
 def buscar_artigos(termo: str, quantidade: int = 10) -> pd.DataFrame:
     resultados = []
