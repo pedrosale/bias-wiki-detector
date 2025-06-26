@@ -109,6 +109,7 @@ Analise criticamente o texto fornecido e responda:
 
 Siga o formato solicitado. Não inclua comentários extras.
 """
+
 # ─────────── EXECUÇÃO GENÉRICA ───────────
 def _run(prompt_tmpl: str, texto: str) -> str:
     prompt = prompt_tmpl.replace("{{TEXTO_ALVO}}", texto)
@@ -117,51 +118,64 @@ def _run(prompt_tmpl: str, texto: str) -> str:
         response_format={"type": "json_object"},
         messages=[{"role": "user", "content": prompt}],
         temperature=0,
+        max_tokens=500               # ↳ evita resposta gigante/truncada
     )
     return rsp.choices[0].message.content
 
 # ─────────── SEGURANÇA NO PARSING ───────────
 def primeiro_item(lst, default_keys):
-    if not lst or not isinstance(lst[0], dict):
-        return {k: "" for k in default_keys}
+    """
+    Garante sempre dicionário.
+    Se resposta vier como string ("Nenhum viés...") ou vazia — devolve chaves com '—'.
+    """
+    if not lst or isinstance(lst[0], str) or not isinstance(lst[0], dict):
+        return {k: "—" for k in default_keys}
     return lst[0]
 
 # ─────────── FUNÇÃO PRINCIPAL ───────────
 def analisar_artigos(df_artigos: pd.DataFrame) -> pd.DataFrame:
-    """
-    Recebe DataFrame com colunas:
-        Artigo | Link | Conteudo  (ou Texto)
-    Retorna DataFrame final com colunas de viés / opinião / contraponto.
-    """
-    linhas = []
+    linhas, MAX_CHARS = [], 6_000      # ≈ 2 k tokens
+
     for _, row in df_artigos.iterrows():
         titulo = row.Artigo
-        texto = (row.get("Conteudo") or row.get("Texto") or "")[:25_000]
+        texto  = (row.get("Conteudo") or row.get("Texto") or "")[:MAX_CHARS]
 
         try:
-            bias = safe_json_parse(_run(PROMPT_LT, texto))
-            opin = safe_json_parse(_run(PROMPT_OP, texto))
-            contra = safe_json_parse(_run(PROMPT_CT, texto))
+            # — chamadas à API
+            bias_raw   = _run(PROMPT_LT, texto)
+            opin_raw   = _run(PROMPT_OP, texto)
+            contra_raw = _run(PROMPT_CT, texto)
+
+            # --- DEBUG opcional (descomente para ver nos logs) ---
+            # print(f"\n🔎 {titulo[:40]}…")
+            # print("Bias RAW   :", bias_raw[:150])
+            # print("Opin RAW   :", opin_raw[:150])
+            # print("Contra RAW :", contra_raw[:150])
+
+            bias   = safe_json_parse(bias_raw)
+            opin   = safe_json_parse(opin_raw)
+            contra = safe_json_parse(contra_raw)
+
         except Exception as e:
             bias = opin = contra = [{"erro": str(e)}]
 
-        bias0 = primeiro_item(bias,   ["trecho", "tipo", "explicacao", "reescrita_neutra"])
-        opin0 = primeiro_item(opin,   ["trecho", "motivo", "reescrita_sugerida"])
+        bias0   = primeiro_item(bias,   ["trecho", "tipo", "explicacao", "reescrita_neutra"])
+        opin0   = primeiro_item(opin,   ["trecho", "motivo", "reescrita_sugerida"])
         contra0 = primeiro_item(contra, ["tema_ausente", "por_que_e_importante", "como_incluir"])
 
         linhas.append({
             "Artigo": titulo,
             "Link": row.Link,
-            "Trecho (Tendencioso)":         bias0.get("trecho", ""),
-            "Tipo de Viés":                 bias0.get("tipo", ""),
-            "Explicação (Viés)":            bias0.get("explicacao", ""),
-            "Reescrita (Viés)":             bias0.get("reescrita_neutra", ""),
-            "Trecho (Opinião disfarçada)": opin0.get("trecho", ""),
-            "Motivo (Opinião)":             opin0.get("motivo", ""),
-            "Reescrita (Opinião)":          opin0.get("reescrita_sugerida", ""),
-            "Tema ausente":                 contra0.get("tema_ausente", ""),
-            "Importância do Contraponto":   contra0.get("por_que_e_importante", ""),
-            "Sugestão de Inclusão":         contra0.get("como_incluir", "")
+            "Trecho (Tendencioso)":          bias0.get("trecho", ""),
+            "Tipo de Viés":                  bias0.get("tipo", ""),
+            "Explicação (Viés)":             bias0.get("explicacao", ""),
+            "Reescrita (Viés)":              bias0.get("reescrita_neutra", ""),
+            "Trecho (Opinião disfarçada)":   opin0.get("trecho", ""),
+            "Motivo (Opinião)":              opin0.get("motivo", ""),
+            "Reescrita (Opinião)":           opin0.get("reescrita_sugerida", ""),
+            "Tema ausente":                  contra0.get("tema_ausente", ""),
+            "Importância do Contraponto":    contra0.get("por_que_e_importante", ""),
+            "Sugestão de Inclusão":          contra0.get("como_incluir", "")
         })
 
     return pd.DataFrame(linhas)
