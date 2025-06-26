@@ -12,21 +12,18 @@ consulta a <i>MediaWiki&nbsp;API</i> para obter a <b>data da última edição</b
 ⚠️ Se a data estiver indisponível para algum artigo, ele é listado após os que possuem data válida.
 </div>
 
-<div style="margin-top:15px; margin-bottom:20px;">
+<div style="margin-top:15px; margin-bottom:25px;">
 <a href="https://github.com/pedrosale/bias-wiki-detector/blob/main/README.md" target="_blank">
 Veja aqui as definições dos tipos de viés analisados pela ferramenta</a>.
 </div>
-""", unsafe_allow_html=True)  
+""", unsafe_allow_html=True)
 
-
-
-
-# Entrada
+# Entradas
 termo = st.text_input("🔍 Termo de busca", value="inteligência artificial")
-qtd   = st.number_input("📄 Defina N", 1, 50, 3)
+qtd = st.number_input("📄 Defina N", 1, 50, 3)
 executar = st.button("Analisar")
 
-# Rodar análise ou reutilizar cache
+# Processamento
 if "df_final" not in st.session_state or executar:
     with st.spinner("🔎 Buscando artigos…"):
         df_raw = buscar_artigos(termo, qtd)
@@ -44,7 +41,7 @@ if "df_final" not in st.session_state or executar:
     st.session_state.df_final = df_final
     st.session_state.df_raw = df_raw
 
-# Exibir resultado
+# Exibição dos resultados
 if "df_final" in st.session_state:
     df_final = st.session_state.df_final
     df_raw = st.session_state.df_raw
@@ -60,22 +57,26 @@ if "df_final" in st.session_state:
 
     for _, row in df_artigo.iterrows():
         st.markdown("---")
-        col1, col2 = st.columns([1, 3])
-        with col1:
-            st.markdown("**🟥 Trecho (Tendencioso)**")
-            st.markdown(row.get("Trecho (Tendencioso)", ""))
-            st.markdown("**🟧 Opinião Disfarçada**")
-            st.markdown(row.get("Trecho (Opinião disfarçada)", ""))
-            st.markdown("**🟨 Tema Ausente**")
-            st.markdown(row.get("Tema ausente", ""))
-        with col2:
-            st.markdown("**Tipo de Viés:** " + row.get("Tipo de Viés", ""))
-            st.markdown("**Explicação (Viés):** " + row.get("Explicação (Viés)", ""))
-            st.markdown("**Reescrita (Viés):** " + row.get("Reescrita (Viés)", ""))
-            st.markdown("**Motivo (Opinião):** " + row.get("Motivo (Opinião)", ""))
-            st.markdown("**Reescrita (Opinião):** " + row.get("Reescrita (Opinião)", ""))
-            st.markdown("**Importância do Contraponto:** " + row.get("Importância do Contraponto", ""))
-            st.markdown("**Sugestão de Inclusão:** " + row.get("Sugestão de Inclusão", ""))
 
+        # 🔴 Viés Tendencioso
+        st.subheader("🔴 Tendencioso")
+        st.markdown(f"**Trecho:** {row.get('Trecho (Tendencioso)', '')}")
+        st.markdown(f"**Tipo de Viés:** {row.get('Tipo de Viés', '')}")
+        st.markdown(f"**Explicação:** {row.get('Explicação (Viés)', '')}")
+        st.markdown(f"**Reescrita:** {row.get('Reescrita (Viés)', '')}")
+
+        # 🟠 Opinião Disfarçada
+        st.subheader("🟠 Opinião Disfarçada")
+        st.markdown(f"**Trecho:** {row.get('Trecho (Opinião disfarçada)', '')}")
+        st.markdown(f"**Motivo:** {row.get('Motivo (Opinião)', '')}")
+        st.markdown(f"**Reescrita:** {row.get('Reescrita (Opinião)', '')}")
+
+        # 🟡 Ausência de Contraponto
+        st.subheader("🟡 Ausência de Contraponto")
+        st.markdown(f"**Tema Ausente:** {row.get('Tema ausente', '')}")
+        st.markdown(f"**Importância do Contraponto:** {row.get('Importância do Contraponto', '')}")
+        st.markdown(f"**Sugestão de Inclusão:** {row.get('Sugestão de Inclusão', '')}")
+
+    # Exportar CSV
     csv = df_final.to_csv(index=False).encode("utf-8")
     st.download_button("⬇️ Baixar CSV", csv, "bias_report.csv", mime="text/csv")
