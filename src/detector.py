@@ -110,7 +110,7 @@ Analise criticamente o texto fornecido e responda:
 Siga o formato solicitado. Não inclua comentários extras.
 """
 
-
+# ─────────────────── FUNÇÃO DE EXECUÇÃO ───────────────
 def _run(prompt_tmpl: str, texto: str) -> str:
     prompt = prompt_tmpl.replace("{{TEXTO_ALVO}}", texto)
     rsp = client.chat.completions.create(
@@ -121,12 +121,18 @@ def _run(prompt_tmpl: str, texto: str) -> str:
     )
     return rsp.choices[0].message.content
 
+# ─────────────────── FUNÇÃO PRINCIPAL ─────────────────
 def analisar_artigos(df_artigos: pd.DataFrame) -> pd.DataFrame:
-    """Recebe DF com colunas Artigo / Link / Conteudo. Devolve tabela final."""
+    """
+    Recebe DataFrame com colunas:
+        Artigo | Link | Conteudo  (ou Texto)
+    Retorna DataFrame final com colunas de viés / opinião / contraponto.
+    """
     linhas = []
     for _, row in df_artigos.iterrows():
         titulo = row.Artigo
-        texto  = row.Texto[:25_000]  # corta para economizar tokens
+        texto  = (row.get("Conteudo") or row.get("Texto") or "")[:25_000]  # ✅ robusto
+
         try:
             bias   = safe_json_parse(_run(PROMPT_LT, texto))
             opin   = safe_json_parse(_run(PROMPT_OP, texto))
@@ -134,27 +140,27 @@ def analisar_artigos(df_artigos: pd.DataFrame) -> pd.DataFrame:
         except Exception as e:
             bias = opin = contra = [{"erro": str(e)}]
 
-        # garante lista
+        # normaliza para lista
         if not isinstance(bias, list):   bias   = [bias]
         if not isinstance(opin, list):   opin   = [opin]
         if not isinstance(contra, list): contra = [contra]
 
-        # usa só o PRIMEIRO item de cada prompt
+        # pega o primeiro item de cada resposta
         bias0, opin0, contra0 = bias[0], opin[0], contra[0]
 
         linhas.append({
             "Artigo": titulo,
             "Link": row.Link,
             "Trecho (Tendencioso)": bias0.get("trecho", ""),
-            "Tipo de Viés": bias0.get("tipo", ""),
-            "Explicação (Viés)": bias0.get("explicacao", ""),
-            "Reescrita (Viés)": bias0.get("reescrita_neutra", ""),
+            "Tipo de Viés":         bias0.get("tipo", ""),
+            "Explicação (Viés)":    bias0.get("explicacao", ""),
+            "Reescrita (Viés)":     bias0.get("reescrita_neutra", ""),
             "Trecho (Opinião disfarçada)": opin0.get("trecho", ""),
-            "Motivo (Opinião)": opin0.get("motivo", ""),
-            "Reescrita (Opinião)": opin0.get("reescrita_sugerida", ""),
-            "Tema ausente": contra0.get("tema_ausente", ""),
+            "Motivo (Opinião)":         opin0.get("motivo", ""),
+            "Reescrita (Opinião)":      opin0.get("reescrita_sugerida", ""),
+            "Tema ausente":             contra0.get("tema_ausente", ""),
             "Importância do Contraponto": contra0.get("por_que_e_importante", ""),
-            "Sugestão de Inclusão": contra0.get("como_incluir", ""),
+            "Sugestão de Inclusão":       contra0.get("como_incluir", ""),
         })
 
     return pd.DataFrame(linhas)
