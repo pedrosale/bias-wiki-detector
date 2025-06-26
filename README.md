@@ -1,14 +1,16 @@
 # 🧠 Bias Wiki Detector
 
-Ferramenta que examina artigos da Wikipédia sobre temas e destaca três dimensões de desequilíbrio textual:
+Ferramenta que examina artigos da Wikipédia sobre temas e destaca três dimensões de desequilíbrio textual, agora organizadas visualmente de forma independente na interface da aplicação:
 
 | Dimensão analisada | O que procura no texto? | Sub-tipos detectados |
 |--------------------|-------------------------|----------------------|
-| **1. Linguagem tendenciosa** | Palavras ou construções que induzem parcialidade. | • Favoritismo<br>• Preconceito<br>• Sensacionalismo<br>• Generalização indevida<br>• Adjetivação de valor<br>• Verbo carregado<br>• Suposição implícita |
-| **2. Opinião disfarçada de fato** | Frases que aparentam ser factuais, mas contêm julgamento, interpretação ou suposição não-comprovada. | — |
-| **3. Ausência de contraponto** | Pontos de vista alternativos, dados ou impactos relevantes omitidos que comprometeriam a imparcialidade. | — |
+| **1. Linguagem tendenciosa** (🔴) | Palavras ou construções que induzem parcialidade. | • Favoritismo<br>• Preconceito<br>• Sensacionalismo<br>• Generalização indevida<br>• Adjetivação de valor<br>• Verbo carregado<br>• Suposição implícita |
+| **2. Opinião disfarçada de fato** (🟠) | Frases que aparentam ser factuais, mas contêm julgamento, interpretação ou suposição não-comprovada. | — |
+| **3. Ausência de contraponto** (🟡) | Pontos de vista alternativos, dados ou impactos relevantes omitidos que comprometeriam a imparcialidade. | — |
 
-### Definições rápidas dos sub-tipos
+---
+
+### 📘 Definições rápidas dos sub-tipos
 
 | Sub-tipo | Descrição concisa |
 |----------|------------------|
@@ -20,10 +22,16 @@ Ferramenta que examina artigos da Wikipédia sobre temas e destaca três dimens�
 | **Verbo carregado** | Verbos que sugerem avaliação ou emoção (ex.: “impôs”, “destruiu”). |
 | **Suposição implícita** | Relações de causa/efeito ou intenções assumidas sem evidência. |
 
-A saída da ferramenta apresenta, para cada artigo:
+---
 
-- **Trecho** problemático identificado  
-- **Classificação** (sub-tipo ou dimensão)  
-- **Explicação** breve do viés  
-- **Reescrita sugerida** em tom neutro  
-- **Contraponto ausente** (quando aplicável) e sugestão de inclusão
+### 📄 Para cada artigo analisado, a ferramenta apresenta:
+
+- **🔴 Trecho com linguagem tendenciosa**, sua classificação (subtipo) e uma reescrita sugerida em tom neutro
+- **🟠 Trecho com opinião disfarçada**, explicação e reescrita
+- **🟡 Tema ausente ou contraponto omitido**, sua importância e sugestão de inclusão
+
+---
+
+### ✅ Objetivo
+
+O Bias Wiki Detector visa auxiliar jornalistas, pesquisadores e desenvolvedores de IA a identificar padrões sutis de viés em textos informativos, promovendo maior clareza, neutralidade e pluralidade no conteúdo analisado.
