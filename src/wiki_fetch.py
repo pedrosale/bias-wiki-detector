@@ -12,7 +12,7 @@ UA = "BiasWikiDetector/1.0 (Pedro Amorim; contato: pedro@email.com)"
 
 def buscar_artigos(termo: str, max_art=50):
     """Busca artigos da Wikipedia em português cujo título contém exatamente o termo informado."""
-    
+
     titulos_brutos = wikipedia.search(termo, results=max_art)
     titulos = [t for t in titulos_brutos if termo.lower() in t.lower()]
 
@@ -44,7 +44,7 @@ def buscar_artigos(termo: str, max_art=50):
             link_corrigido = f"https://pt.wikipedia.org/wiki/{quote(page.title)}"
 
             artigos.append({
-                "Artigo": page.title,  # usa o título real para evitar redirecionamento
+                "Artigo": page.title,
                 "Link": link_corrigido,
                 "Conteudo": page.content,
                 "data_ultima_edicao": data_edicao
@@ -54,6 +54,17 @@ def buscar_artigos(termo: str, max_art=50):
             print(f"❌ Falha em '{titulo}': {e}")
 
     df = pd.DataFrame(artigos)
-    df["data_ultima_edicao"] = pd.to_datetime(df["data_ultima_edicao"])
+
+    # 💡 Garante que a coluna exista, mesmo se estiver vazia
+    if "data_ultima_edicao" not in df.columns:
+        df["data_ultima_edicao"] = pd.NaT
+
+    # 💡 Converte com segurança
+    try:
+        df["data_ultima_edicao"] = pd.to_datetime(df["data_ultima_edicao"])
+    except Exception as e:
+        print(f"⚠️ Erro ao converter datas: {e}")
+        df["data_ultima_edicao"] = pd.NaT
+
     df = df.sort_values("data_ultima_edicao", ascending=False)
     return df
