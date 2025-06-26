@@ -15,7 +15,7 @@ consulta a <i>MediaWiki&nbsp;API</i> para obter a <b>data da última edição</b
 
 
 termo = st.text_input("🔍 Termo de busca", value="inteligência artificial")
-qtd   = st.number_input("📄 Artigos mais recentes", 1, 50, 10)
+qtd   = st.number_input("📄 Defina N", 1, 50, 10)
 executar = st.button("Analisar")
 
 if executar:
