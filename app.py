@@ -108,7 +108,7 @@ if "df_final" in st.session_state:
         html += "</body></html>"
 
         st.download_button(
-            "⬇️ Baixar HTML (abra e salve como PDF)",
+            "⬇️ Baixar relatório",
             html,
             file_name="bias_report.html",
             mime="text/html"
