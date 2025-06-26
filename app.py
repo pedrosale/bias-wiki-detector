@@ -12,11 +12,11 @@ consulta a <i>MediaWiki&nbsp;API</i> para obter a <b>data da última edição</b
 ⚠️ Se a data estiver indisponível para algum artigo, ele é listado após os que possuem data válida.
 </div>
 
-<div style="margin-top:15px;">
+<div style="margin-top:15px; margin-bottom:20px;">
 <a href="https://github.com/pedrosale/bias-wiki-detector/blob/main/README.md" target="_blank">
-Veja aqui as definições dos tipos de viés analisados pela ferramenta</a>.
+Definições dos tipos de viés analisados pela ferramenta</a>.
 </div>
-""", unsafe_allow_html=True)
+
 
 # Entrada
 termo = st.text_input("🔍 Termo de busca", value="inteligência artificial")
