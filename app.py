@@ -18,39 +18,41 @@ Veja aqui as definições dos tipos de viés analisados pela ferramenta</a>.
 </div>
 """, unsafe_allow_html=True)
 
-# Entrada
+# Entradas do usuário
 termo = st.text_input("🔍 Termo de busca", value="inteligência artificial")
-qtd = st.number_input("📄 Defina N", 1, 50, 10)
+qtd   = st.number_input("📄 Defina N", 1, 50, 10)
+executar = st.button("Analisar")
 
-if st.button("Analisar"):
+if executar:
     with st.spinner("🔎 Buscando artigos…"):
-        df_raw = buscar_artigos(termo)
+        df_raw = buscar_artigos(termo, qtd)  # <- agora respeita N corretamente
 
     if df_raw.empty:
-        st.warning("Nenhum artigo encontrado.")
+        st.warning("Nenhum artigo encontrado com esse termo no título.")
         st.stop()
 
     st.success(f"{len(df_raw)} artigos encontrados.")
     st.dataframe(df_raw[["Artigo", "Link", "data_ultima_edicao"]], use_container_width=True)
 
-    with st.spinner("🤖 Rodando análise de viés…"):
-        df_final = analisar_artigos(df_raw.head(qtd))
-
-    if df_final.empty:
-        st.warning("Nenhum viés detectado.")
-        st.stop()
+    with st.spinner("🤖 Rodando análise de viés (OpenAI)…"):
+        df_final = analisar_artigos(df_raw)  # <- já está limitado aos N mais recentes
 
     st.success("Análise concluída!")
 
-    artigos = df_final["Artigo"].unique()
-    artigo_escolhido = st.selectbox("🔎 Selecione um artigo para ver a análise:", artigos)
+    # Interface interativa por artigo
+    artigos_unicos = df_final["Artigo"].unique()
+    escolhido = st.selectbox("🔎 Selecione um artigo para ver a análise completa:", artigos_unicos)
 
-    df_artigo = df_final[df_final["Artigo"] == artigo_escolhido]
+    df_artigo = df_final[df_final["Artigo"] == escolhido]
     link = df_artigo["Link"].iloc[0]
-    st.markdown(f"### 📄 [{artigo_escolhido}]({link})", unsafe_allow_html=True)
+    st.markdown(f"### 📄 [{escolhido}]({link})", unsafe_allow_html=True)
 
     for _, row in df_artigo.iterrows():
         st.markdown("---")
         st.markdown(f"**Trecho tendencioso:** {row['Trecho (Tendencioso)']}")
         st.markdown(f"**Tipo de viés:** {row['Tipo de Viés']}")
         st.markdown(f"**Explicação:** {row['Explicação (Viés)']}")
+
+    # Botão para baixar CSV completo
+    csv = df_final.to_csv(index=False).encode("utf-8")
+    st.download_button("⬇️ Baixar CSV", csv, "bias_report.csv", mime="text/csv")
