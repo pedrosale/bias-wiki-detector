@@ -1,11 +1,11 @@
 import os, json
 import pandas as pd
 from openai import OpenAI
-from .utils import safe_json_parse                          # mesma função que já usa
+from .utils import safe_json_parse  # mesma função que já usa
 
-# ─────────────────── CONFIG OPENAI ────────────────────
+# ─────────── CONFIG OPENAI ───────────
 client = OpenAI()
-MODEL  = os.getenv("OPENAI_MODEL", "gpt-4o-mini")           # opc.: defina em Secrets
+MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")  # opcional: defina em Secrets
 
 # ─────────────────── PROMPTS ───────────────────────────
 PROMPT_LT = """
@@ -109,8 +109,7 @@ Analise criticamente o texto fornecido e responda:
 
 Siga o formato solicitado. Não inclua comentários extras.
 """
-
-# ─────────────────── FUNÇÃO DE EXECUÇÃO ───────────────
+# ─────────── EXECUÇÃO GENÉRICA ───────────
 def _run(prompt_tmpl: str, texto: str) -> str:
     prompt = prompt_tmpl.replace("{{TEXTO_ALVO}}", texto)
     rsp = client.chat.completions.create(
@@ -121,7 +120,13 @@ def _run(prompt_tmpl: str, texto: str) -> str:
     )
     return rsp.choices[0].message.content
 
-# ─────────────────── FUNÇÃO PRINCIPAL ─────────────────
+# ─────────── SEGURANÇA NO PARSING ───────────
+def primeiro_item(lst, default_keys):
+    if not lst or not isinstance(lst[0], dict):
+        return {k: "" for k in default_keys}
+    return lst[0]
+
+# ─────────── FUNÇÃO PRINCIPAL ───────────
 def analisar_artigos(df_artigos: pd.DataFrame) -> pd.DataFrame:
     """
     Recebe DataFrame com colunas:
@@ -131,36 +136,32 @@ def analisar_artigos(df_artigos: pd.DataFrame) -> pd.DataFrame:
     linhas = []
     for _, row in df_artigos.iterrows():
         titulo = row.Artigo
-        texto  = (row.get("Conteudo") or row.get("Texto") or "")[:25_000]  # ✅ robusto
+        texto = (row.get("Conteudo") or row.get("Texto") or "")[:25_000]
 
         try:
-            bias   = safe_json_parse(_run(PROMPT_LT, texto))
-            opin   = safe_json_parse(_run(PROMPT_OP, texto))
+            bias = safe_json_parse(_run(PROMPT_LT, texto))
+            opin = safe_json_parse(_run(PROMPT_OP, texto))
             contra = safe_json_parse(_run(PROMPT_CT, texto))
         except Exception as e:
             bias = opin = contra = [{"erro": str(e)}]
 
-        # normaliza para lista
-        if not isinstance(bias, list):   bias   = [bias]
-        if not isinstance(opin, list):   opin   = [opin]
-        if not isinstance(contra, list): contra = [contra]
-
-        # pega o primeiro item de cada resposta
-        bias0, opin0, contra0 = bias[0], opin[0], contra[0]
+        bias0 = primeiro_item(bias,   ["trecho", "tipo", "explicacao", "reescrita_neutra"])
+        opin0 = primeiro_item(opin,   ["trecho", "motivo", "reescrita_sugerida"])
+        contra0 = primeiro_item(contra, ["tema_ausente", "por_que_e_importante", "como_incluir"])
 
         linhas.append({
             "Artigo": titulo,
             "Link": row.Link,
-            "Trecho (Tendencioso)": bias0.get("trecho", ""),
-            "Tipo de Viés":         bias0.get("tipo", ""),
-            "Explicação (Viés)":    bias0.get("explicacao", ""),
-            "Reescrita (Viés)":     bias0.get("reescrita_neutra", ""),
+            "Trecho (Tendencioso)":         bias0.get("trecho", ""),
+            "Tipo de Viés":                 bias0.get("tipo", ""),
+            "Explicação (Viés)":            bias0.get("explicacao", ""),
+            "Reescrita (Viés)":             bias0.get("reescrita_neutra", ""),
             "Trecho (Opinião disfarçada)": opin0.get("trecho", ""),
-            "Motivo (Opinião)":         opin0.get("motivo", ""),
-            "Reescrita (Opinião)":      opin0.get("reescrita_sugerida", ""),
-            "Tema ausente":             contra0.get("tema_ausente", ""),
-            "Importância do Contraponto": contra0.get("por_que_e_importante", ""),
-            "Sugestão de Inclusão":       contra0.get("como_incluir", ""),
+            "Motivo (Opinião)":             opin0.get("motivo", ""),
+            "Reescrita (Opinião)":          opin0.get("reescrita_sugerida", ""),
+            "Tema ausente":                 contra0.get("tema_ausente", ""),
+            "Importância do Contraponto":   contra0.get("por_que_e_importante", ""),
+            "Sugestão de Inclusão":         contra0.get("como_incluir", "")
         })
 
     return pd.DataFrame(linhas)
