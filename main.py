@@ -1,50 +1,54 @@
-import wikipedia
+from pathlib import Path
+
+main_py_code = """
+import streamlit as st
 import pandas as pd
-import requests
-from datetime import datetime
-import json
+from src.wiki_fetch import buscar_artigos
+from src.detector import analisar_artigos
 
-# Configuração
-wikipedia.set_lang("pt")
-UA = "BiasWikiDetector/1.0 (Pedro Amorim; contato: pedro@email.com)"
+st.set_page_config(page_title="Bias Wiki Detector", layout="wide")
+st.title("🧠 Bias Wiki Detector")
+st.markdown(\"""
+<div style="background-color:#f0f2f6;padding:10px;border-left:5px solid #999;">
+O detector pesquisa até <b>50 artigos da Wikipédia</b> cujo título contém o termo informado, 
+consulta a <i>MediaWiki&nbsp;API</i> para obter a <b>data da última edição</b> e analisa os <b>N artigos mais recentes</b>.<br>
+⚠️ Se a data estiver indisponível para algum artigo, ele é listado após os que possuem data válida.
+</div>
+\""", unsafe_allow_html=True)
 
-def get_last_edit_date(titulo):
-    url = "https://pt.wikipedia.org/w/api.php"
-    params = {
-        "action": "query",
-        "format": "json",
-        "prop": "revisions",
-        "rvprop": "timestamp",
-        "titles": titulo,
-    }
-    headers = {"User-Agent": UA}
-    r = requests.get(url, params=params, headers=headers)
-    r.raise_for_status()
-    data = r.json()
-    page = next(iter(data["query"]["pages"].values()))
-    return page["revisions"][0]["timestamp"] if "revisions" in page else None
+# Campos de entrada
+termo = st.text_input("🔍 Termo de busca", value="inteligência artificial")
+n = st.number_input("📄 Defina N", min_value=1, max_value=50, value=5)
 
-def buscar_artigos(termo, qtd=10):
-    titulos = wikipedia.search(termo, results=50)
-    artigos = []
+# Botão de análise
+if st.button("Analisar"):
+    with st.spinner("Buscando artigos e processando..."):
+        df = buscar_artigos(termo)
+        if df.empty:
+            st.warning("Nenhum artigo encontrado.")
+        else:
+            st.success(f"{len(df)} artigos encontrados.")
+            st.dataframe(df[["artigo", "link", "data_ultima_edicao"]])
 
-    for titulo in titulos:
-        if termo.lower() not in titulo.lower():
-            continue  # filtra por título contendo termo
+            df_analise = analisar_artigos(df.head(n))
 
-        try:
-            page = wikipedia.page(titulo)
-            data_edicao = get_last_edit_date(titulo)
-            artigos.append({
-                "artigo": titulo,
-                "link": page.url,
-                "conteudo": page.content,
-                "data_ultima_edicao": data_edicao
-            })
-        except Exception:
-            continue
+            if not df_analise.empty:
+                st.success("Análise concluída!")
 
-    df = pd.DataFrame(artigos)
-    df["data_ultima_edicao"] = pd.to_datetime(df["data_ultima_edicao"])
-    df = df.sort_values("data_ultima_edicao", ascending=False).head(qtd)
-    return df[["artigo", "link", "data_ultima_edicao"]]
+                artigos_unicos = df_analise["Artigo"].unique()
+                escolhido = st.selectbox("🔎 Selecione um artigo para ver a análise completa:", artigos_unicos)
+
+                df_artigo = df_analise[df_analise["Artigo"] == escolhido]
+                link = df_artigo["Link"].iloc[0]
+                st.markdown(f"### 📄 [{escolhido}]({link})", unsafe_allow_html=True)
+
+                for i, row in df_artigo.iterrows():
+                    st.markdown("---")
+                    st.markdown(f"**Trecho tendencioso:** {row['Trecho (Tendencioso)']}")
+                    st.markdown(f"**Tipo de viés:** {row['Tipo de Viés']}")
+                    st.markdown(f"**Explicação:** {row['Explicação (Viés)']}")
+"""
+
+path = "/mnt/data/main_interativo.py"
+Path(path).write_text(main_py_code)
+path
