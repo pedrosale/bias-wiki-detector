@@ -1,6 +1,6 @@
 # 🧠 Bias Wiki Detector
 
-Ferramenta que examina artigos da Wikipédia sobre inteligência artificial e destaca três dimensões de desequilíbrio textual:
+Ferramenta que examina artigos da Wikipédia sobre temas e destaca três dimensões de desequilíbrio textual:
 
 | Dimensão analisada | O que procura no texto? | Sub-tipos detectados |
 |--------------------|-------------------------|----------------------|
