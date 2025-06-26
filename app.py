@@ -18,29 +18,39 @@ Veja aqui as definições dos tipos de viés analisados pela ferramenta</a>.
 </div>
 """, unsafe_allow_html=True)
 
-
-
-
+# Entrada
 termo = st.text_input("🔍 Termo de busca", value="inteligência artificial")
-qtd   = st.number_input("📄 Defina N", 1, 50, 10)
-executar = st.button("Analisar")
+qtd = st.number_input("📄 Defina N", 1, 50, 10)
 
-if executar:
+if st.button("Analisar"):
     with st.spinner("🔎 Buscando artigos…"):
-        df_raw = buscar_artigos(termo, qtd)
+        df_raw = buscar_artigos(termo)
 
     if df_raw.empty:
-        st.warning("Nenhum artigo encontrado com esse termo no título.")
+        st.warning("Nenhum artigo encontrado.")
         st.stop()
 
     st.success(f"{len(df_raw)} artigos encontrados.")
     st.dataframe(df_raw[["Artigo", "Link", "data_ultima_edicao"]], use_container_width=True)
 
-    with st.spinner("🤖 Rodando análise de viés (OpenAI)…"):
-        df_final = analisar_artigos(df_raw)
+    with st.spinner("🤖 Rodando análise de viés…"):
+        df_final = analisar_artigos(df_raw.head(qtd))
+
+    if df_final.empty:
+        st.warning("Nenhum viés detectado.")
+        st.stop()
 
     st.success("Análise concluída!")
-    st.dataframe(df_final, use_container_width=True)
 
-    csv = df_final.to_csv(index=False).encode("utf-8")
-    st.download_button("⬇️ Baixar CSV", csv, "bias_report.csv", mime="text/csv")
+    artigos = df_final["Artigo"].unique()
+    artigo_escolhido = st.selectbox("🔎 Selecione um artigo para ver a análise:", artigos)
+
+    df_artigo = df_final[df_final["Artigo"] == artigo_escolhido]
+    link = df_artigo["Link"].iloc[0]
+    st.markdown(f"### 📄 [{artigo_escolhido}]({link})", unsafe_allow_html=True)
+
+    for _, row in df_artigo.iterrows():
+        st.markdown("---")
+        st.markdown(f"**Trecho tendencioso:** {row['Trecho (Tendencioso)']}")
+        st.markdown(f"**Tipo de viés:** {row['Tipo de Viés']}")
+        st.markdown(f"**Explicação:** {row['Explicação (Viés)']}")
