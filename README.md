@@ -34,4 +34,4 @@ Ferramenta que examina artigos da Wikipédia sobre temas e destaca três dimens�
 
 ### ✅ Objetivo
 
-O Bias Wiki Detector visa auxiliar jornalistas, pesquisadores e desenvolvedores de IA a identificar padrões sutis de viés em textos informativos, promovendo maior clareza, neutralidade e pluralidade no conteúdo analisado.
+O Bias Wiki Detector visa auxiliar a identificação de padrões sutis de viés em textos informativos, promovendo maior clareza, neutralidade e pluralidade no conteúdo analisado.
