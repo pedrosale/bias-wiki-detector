@@ -11,9 +11,9 @@ def buscar_artigos(termo, quantidade=5):
             pagina = wikipedia.page(titulo)
             artigos.append({
                 "Artigo": titulo,
-                "Texto": pagina.content,
+                "Conteudo": pagina.content,         # ✅ coluna padronizada
                 "Link": pagina.url,
-                "data_ultima_edicao": "",  # a API não retorna isso
+                "data_ultima_edicao": ""            # a API 'wikipedia' não retorna
             })
         except Exception as e:
             print(f"Erro ao buscar página {titulo}: {e}")
