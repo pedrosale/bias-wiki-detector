@@ -1,22 +1,22 @@
-import wikipediaapi
+import wikipedia
 import pandas as pd
-from datetime import datetime
 
-wiki = wikipediaapi.Wikipedia(
-    language='pt',
-    user_agent='bias-wiki-detector/1.0 (Pedro Amorim)'
-)
+def buscar_artigos(termo, quantidade=5):
+    wikipedia.set_lang("pt")
+    titulos = wikipedia.search(termo, results=quantidade)
 
-
-def buscar_artigos(termo: str, quantidade: int = 10) -> pd.DataFrame:
-    resultados = []
-    for titulo in wiki.search(termo, results=quantidade):
-        page = wiki.page(titulo)
-        if not page.exists():
+    artigos = []
+    for titulo in titulos:
+        try:
+            pagina = wikipedia.page(titulo)
+            artigos.append({
+                "Artigo": titulo,
+                "Texto": pagina.content,
+                "Link": pagina.url,
+                "data_ultima_edicao": "",  # a API não retorna isso
+            })
+        except Exception as e:
+            print(f"Erro ao buscar página {titulo}: {e}")
             continue
-        resultados.append({
-            "Artigo": page.title,
-            "Link": page.fullurl,
-            "data_ultima_edicao": datetime.now().date().isoformat()  # você pode ajustar isso
-        })
-    return pd.DataFrame(resultados)
+
+    return pd.DataFrame(artigos)
