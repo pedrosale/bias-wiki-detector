@@ -5,7 +5,7 @@ from .utils import safe_json_parse  # mesma função que já usa
 
 # ─────────── CONFIG OPENAI ───────────
 client = OpenAI()
-MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")  # opcional: defina em Secrets
+MODEL = os.getenv("OPENAI_MODEL", "gpt-4o")  # opcional: defina em Secrets
 
 # ─────────────────── PROMPTS ───────────────────────────
 PROMPT_LT = """
