@@ -126,8 +126,7 @@ def analisar_artigos(df_artigos: pd.DataFrame) -> pd.DataFrame:
     linhas = []
     for _, row in df_artigos.iterrows():
         titulo = row.Artigo
-        texto  = row.Conteudo[:25_000]           # corta para economizar tokens
-
+        texto  = row.Texto[:25_000]  # corta para economizar tokens
         try:
             bias   = safe_json_parse(_run(PROMPT_LT, texto))
             opin   = safe_json_parse(_run(PROMPT_OP, texto))
