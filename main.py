@@ -5,9 +5,6 @@ import pandas as pd
 from src.wiki_fetch import buscar_artigos
 from src.detector import analisar_artigos
 
-# ─────────────────────────────────────────────
-# Configuração da página
-# ─────────────────────────────────────────────
 st.set_page_config(page_title="Bias Wiki Detector", layout="wide")
 st.title("🧠 Bias Wiki Detector")
 
@@ -27,69 +24,39 @@ Veja aqui a definição completa dos tipos de viés analisados</a>.
     unsafe_allow_html=True,
 )
 
-# ─────────────────────────────────────────────
 # Entrada do usuário
-# ─────────────────────────────────────────────
-termo_busca = st.text_input("🔍 Termo de busca", value="inteligência artificial")
-n_artigos   = st.number_input("📄 Defina N", min_value=1, max_value=50, value=5)
+termo = st.text_input("🔍 Termo de busca", value="inteligência artificial")
+n = st.number_input("📄 Defina N", min_value=1, max_value=50, value=5)
 
-# ─────────────────────────────────────────────
-# Botão de execução
-# ─────────────────────────────────────────────
+# Botão
 if st.button("Analisar"):
-    with st.spinner("🔎 Buscando artigos…"):
-        df_raw = buscar_artigos(termo_busca)
-    if df_raw.empty:
+    with st.spinner("Buscando artigos…"):
+        df = buscar_artigos(termo)
+
+    if df.empty:
         st.warning("Nenhum artigo encontrado.")
         st.stop()
 
-    st.success(f"{len(df_raw)} artigos encontrados.")
-    st.dataframe(df_raw[["Artigo", "Link", "data_ultima_edicao"]], use_container_width=True)
+    st.success(f"{len(df)} artigos encontrados.")
+    st.dataframe(df[["Artigo", "Link", "data_ultima_edicao"]], use_container_width=True)
 
-    # Limita aos N mais recentes escolhidos
-    df_analise = analisar_artigos(df_raw.head(n_artigos))
+    df_analise = analisar_artigos(df.head(n))
 
     if df_analise.empty:
-        st.warning("Não foi possível analisar os artigos.")
+        st.warning("Nenhum conteúdo analisado.")
         st.stop()
 
     st.success("Análise concluída!")
 
-    # ─────────── Seletor de artigo ───────────
-    artigo_escolhido = st.selectbox(
-        "🔎 Selecione um artigo para ver a análise completa:",
-        df_analise["Artigo"].unique(),
-    )
+    artigos = df_analise["Artigo"].unique()
+    artigo_escolhido = st.selectbox("🔎 Selecione um artigo para ver a análise:", artigos)
 
     df_artigo = df_analise[df_analise["Artigo"] == artigo_escolhido]
+    link = df_artigo["Link"].iloc[0]
+    st.markdown(f"### 📄 [{artigo_escolhido}]({link})", unsafe_allow_html=True)
 
-    # Cabeçalho com link clicável
-    link_artigo = df_artigo["Link"].iloc[0]
-    st.markdown(f"### 📄 [{artigo_escolhido}]({link_artigo})", unsafe_allow_html=True)
-
-    # Exibe cada bloco de viés / opinião / contraponto
     for _, row in df_artigo.iterrows():
         st.markdown("---")
         st.markdown(f"**Trecho tendencioso:** {row['Trecho (Tendencioso)']}")
         st.markdown(f"**Tipo de viés:** {row['Tipo de Viés']}")
         st.markdown(f"**Explicação:** {row['Explicação (Viés)']}")
-
-        # Caso existam colunas extras, exiba condicionalmente
-        if row.get("Trecho (Opinião disfarçada)", ""):
-            st.markdown(f"**Trecho – Opinião disfarçada:** {row['Trecho (Opinião disfarçada)']}")
-            st.markdown(f"**Motivo:** {row['Motivo (Opinião)']}")
-            st.markdown(f"**Reescrita sugerida:** {row['Reescrita (Opinião)']}")
-
-        if row.get("Tema ausente", ""):
-            st.markdown(f"**Tema ausente:** {row['Tema ausente']}")
-            st.markdown(f"**Importância do contraponto:** {row['Importância do Contraponto']}")
-            st.markdown(f"**Como incluir:** {row['Sugestão de Inclusão']}")
-
-    # Opcional: download do CSV filtrado
-    csv_bytes = df_analise.to_csv(index=False).encode("utf-8")
-    st.download_button(
-        "⬇️ Baixar CSV completo",
-        csv_bytes,
-        "bias_wiki_report.csv",
-        mime="text/csv",
-    )
