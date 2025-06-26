@@ -14,8 +14,9 @@ consulta a <i>MediaWiki&nbsp;API</i> para obter a <b>data da última edição</b
 
 <div style="margin-top:15px; margin-bottom:20px;">
 <a href="https://github.com/pedrosale/bias-wiki-detector/blob/main/README.md" target="_blank">
-Definições dos tipos de viés analisados pela ferramenta</a>.
+Veja aqui as definições dos tipos de viés analisados pela ferramenta</a>.
 </div>
+
 
 
 # Entrada
